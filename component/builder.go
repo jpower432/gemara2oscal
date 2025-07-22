@@ -2,6 +2,7 @@ package component
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/defenseunicorns/go-oscal/src/pkg/uuid"
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-3"
@@ -119,7 +120,7 @@ func makeRule(requirement layer2.AssessmentRequirement, groupNumber int) []oscal
 
 	ruleDescProp := oscalTypes.Property{
 		Name:    extensions.RuleDescriptionProp,
-		Value:   requirement.Text,
+		Value:   strings.ReplaceAll(requirement.Text, "\n", "\\n"),
 		Ns:      extensions.TrestleNameSpace,
 		Remarks: remark,
 	}
@@ -141,7 +142,7 @@ func makeCheck(assessment layer4.Assessment, groupNumber int) []oscalTypes.Prope
 	checkIdProp := oscalTypes.Property{
 		Name: extensions.CheckIdProp,
 		// FIXME: I actually need an ID here, but it doesn't exist right now
-		Value:   assessment.Description,
+		Value:   strings.ReplaceAll(assessment.Description, "\n", "\\n"),
 		Ns:      extensions.TrestleNameSpace,
 		Remarks: remark,
 	}
