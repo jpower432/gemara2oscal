@@ -12,8 +12,10 @@ github.com/oscal-compass/oscal-sdk-go v0.0.4 h1:86pHRboQ+uQpllSWZHNuELL7TOi3UkUr
 github.com/oscal-compass/oscal-sdk-go v0.0.4/go.mod h1:D75S58qemUznO4weI2F1/RhxDc+VJc9FI3m9wHjHBXU=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/revanite-io/sci v0.3.9-0.20250718205619-6f185946d976 h1:lu6dHoy2NAQ4yJMKclHmAYociFokiBeg227WTtiPOAQ=
-github.com/revanite-io/sci v0.3.9-0.20250718205619-6f185946d976/go.mod h1:lEK7w8kfwWUXFKYoJYyqzTT74umE4OkOlRYp88uxHhc=
+github.com/revanite-io/gemara v0.0.0-devtest.0.20250723172603-22352a20e0d5 h1:63zjJtEfc/htck+Uc7ymN5uHV1GVtgNCsNud41QcxhA=
+github.com/revanite-io/gemara v0.0.0-devtest.0.20250723172603-22352a20e0d5/go.mod h1:2EJVc3K4m0lLi0gGH0ptU43TCBv/EyeFYvDe9pG3Ryc=
+github.com/revanite-io/sci v0.3.8 h1:XbbUmpGgWgf0VZouZhoMH0P/wntbJ98AydBgewk5kCw=
+github.com/revanite-io/sci v0.3.8/go.mod h1:lEK7w8kfwWUXFKYoJYyqzTT74umE4OkOlRYp88uxHhc=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.1 h1:PKK9DyHxif4LZo+uQSgXNqs0jj5+xZwwfKHgph2lxBw=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.1/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=

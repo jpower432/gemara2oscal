@@ -11,7 +11,7 @@ import (
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-3"
 	"github.com/oscal-compass/oscal-sdk-go/extensions"
 	"github.com/oscal-compass/oscal-sdk-go/transformers"
-	"github.com/revanite-io/sci/layer4"
+	"github.com/ossf/gemara/layer4"
 
 	"github.com/jpower432/gemara2oscal/internal/utils"
 )
