@@ -37,6 +37,13 @@ func (c *DefinitionBuilder) AddTargetComponent(targetComponent, componentType st
 			UUID:        uuid.NewUUID(),
 			Description: mappingRef.Description,
 			Source:      mappingRef.Url,
+			Props: &[]oscalTypes.Property{
+				{
+					Name:  extensions.FrameworkProp,
+					Value: mappingRef.Id,
+					Ns:    extensions.TrestleNameSpace,
+				},
+			},
 		}
 	}
 
