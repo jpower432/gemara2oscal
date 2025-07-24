@@ -6,15 +6,15 @@ import (
 
 	oscalTypes "github.com/defenseunicorns/go-oscal/src/types/oscal-1-1-3"
 	"github.com/goccy/go-yaml"
+	"github.com/oscal-compass/oscal-sdk-go/extensions"
 	"github.com/oscal-compass/oscal-sdk-go/validation"
-	"github.com/revanite-io/sci/layer2"
-	"github.com/revanite-io/sci/layer4"
+	"github.com/ossf/gemara/layer2"
+	"github.com/ossf/gemara/layer4"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDefinitionBuilder_Build(t *testing.T) {
-
-	file, err := os.Open("./testdata/good-ccc.yml")
+	file, err := os.Open("./testdata/good-osps.yml")
 	require.NoError(t, err)
 
 	var catalog layer2.Catalog
@@ -33,15 +33,19 @@ func TestDefinitionBuilder_Build(t *testing.T) {
 	}
 
 	builder := NewDefinitionBuilder("ComponentDefinition", "v0.1.0")
-	componentDefintion := builder.AddTargetComponent("Example", "software", catalog).AddValidationComponent("myvalidator", []layer4.ControlEvaluation{eval}).Build()
-	require.Len(t, *componentDefintion.Components, 2)
+	componentDefinition := builder.AddTargetComponent("Example", "software", catalog).AddValidationComponent("myvalidator", []layer4.ControlEvaluation{eval}).Build()
+	require.Len(t, *componentDefinition.Components, 2)
 
-	components := *componentDefintion.Components
-	require.Len(t, *components[0].Props, 20)
+	components := *componentDefinition.Components
+	require.Len(t, *components[0].Props, 12)
 	require.Len(t, *components[1].Props, 3)
 
+	ci := *components[0].ControlImplementations
+	require.Len(t, ci, 1)
+	require.Equal(t, []oscalTypes.Property{{Name: extensions.FrameworkProp, Value: "800-161", Ns: extensions.TrestleNameSpace}}, *ci[0].Props)
+
 	oscalModels := oscalTypes.OscalModels{
-		ComponentDefinition: &componentDefintion,
+		ComponentDefinition: &componentDefinition,
 	}
 
 	validator := validation.NewSchemaValidator()

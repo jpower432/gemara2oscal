@@ -2,6 +2,7 @@ package component
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/defenseunicorns/go-oscal/src/pkg/uuid"
@@ -62,7 +63,7 @@ func (c *DefinitionBuilder) AddTargetComponent(targetComponent, componentType st
 	}
 
 	controlImplementations := make([]oscalTypes.ControlImplementationSet, 0, len(mappingSet))
-	for _, ciSet := range controlImplementations {
+	for _, ciSet := range mappingSet {
 		controlImplementations = append(controlImplementations, ciSet)
 	}
 
@@ -175,7 +176,10 @@ func mapRule(ruleId string, mappings []layer2.Mapping, ciSets map[string]oscalTy
 	}
 
 	for _, mapping := range mappings {
-		targetCI := ciSets[mapping.ReferenceId]
+		targetCI, ok := ciSets[mapping.ReferenceId]
+		if !ok {
+			continue
+		}
 		for _, identifier := range mapping.Identifiers {
 			createOrUpdateImplementedRequirement(ruleIdProp, identifier, &targetCI)
 		}
@@ -200,9 +204,26 @@ func createOrUpdateImplementedRequirement(ruleIdProp oscalTypes.Property, identi
 	if !found {
 		implRequirement := oscalTypes.ImplementedRequirementControlImplementation{
 			UUID:      uuid.NewUUID(),
-			ControlId: identifier,
+			ControlId: convertControl(identifier),
 			Props:     &[]oscalTypes.Property{ruleIdProp},
 		}
 		controlImplementation.ImplementedRequirements = append(controlImplementation.ImplementedRequirements, implRequirement)
 	}
+}
+
+// Assisted by: Gemini 2.5 Flash
+func convertControl(input string) string {
+	// Compile the regular expression to find patterns like (number).
+	// \( and \) are used to match literal parentheses.
+	// (\d+) captures one or more digits inside the parentheses.
+	re := regexp.MustCompile(`\((\d+)\)`)
+
+	// Replace all occurrences of the pattern.
+	// ".$1" means replace with a dot followed by the content of the first captured group (the digits).
+	replacedString := re.ReplaceAllString(input, ".$1")
+
+	// Convert the entire resulting string to lowercase.
+	finalString := strings.ToLower(replacedString)
+
+	return finalString
 }
