@@ -23,11 +23,16 @@ func TestDefinitionBuilder_Build(t *testing.T) {
 	require.NoError(t, err)
 
 	eval := layer4.ControlEvaluation{
-		Control_Id: "CCC.C01",
+		Control_Id: "OSPS-QA-07",
 		Assessments: []*layer4.Assessment{
 			{
-				Requirement_Id: "CCC.C01.TR01",
-				Description:    "my-check-id",
+				Requirement_Id: "OSPS-QA-07.01",
+				Methods: []layer4.AssessmentMethod{
+					{
+						Name:        "my-check-id",
+						Description: "My method",
+					},
+				},
 			},
 		},
 	}
@@ -37,7 +42,7 @@ func TestDefinitionBuilder_Build(t *testing.T) {
 	require.Len(t, *componentDefinition.Components, 2)
 
 	components := *componentDefinition.Components
-	require.Len(t, *components[0].Props, 12)
+	require.Len(t, *components[0].Props, 5)
 	require.Len(t, *components[1].Props, 3)
 
 	ci := *components[0].ControlImplementations

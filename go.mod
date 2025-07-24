@@ -19,8 +19,8 @@ require (
 require (
 	github.com/defenseunicorns/go-oscal v0.6.2
 	github.com/goccy/go-yaml v1.18.0
-	github.com/revanite-io/sci v0.3.8
 	github.com/stretchr/testify v1.10.0
 )
 
-replace github.com/ossf/gemara => github.com/revanite-io/gemara v0.0.0-devtest.0.20250723172603-22352a20e0d5
+// Points to experiments/oscal-transformation branch
+replace github.com/ossf/gemara => github.com/jpower432/sci v0.0.0-20250724232228-cbb132d4c438

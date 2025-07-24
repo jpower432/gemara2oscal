@@ -84,9 +84,12 @@ func (c *DefinitionBuilder) AddValidationComponent(source string, evaluations []
 
 	for _, eval := range evaluations {
 		for _, assessment := range eval.Assessments {
-			checkProps := makeCheck(*assessment, groupNumber)
-			groupNumber += 1
-			componentProps = append(componentProps, checkProps...)
+			for _, method := range assessment.Methods {
+				checkProps := makeCheck(assessment.Requirement_Id, method, groupNumber)
+				groupNumber += 1
+				componentProps = append(componentProps, checkProps...)
+			}
+
 		}
 	}
 
@@ -132,32 +135,64 @@ func makeRule(requirement layer2.AssessmentRequirement, groupNumber int) []oscal
 		Ns:      extensions.TrestleNameSpace,
 		Remarks: remark,
 	}
-	return []oscalTypes.Property{
+
+	props := []oscalTypes.Property{
 		ruleIdProp,
 		ruleDescProp,
 	}
+
+	if len(requirement.RecommendedParameters) > 0 {
+		for i, parameter := range requirement.RecommendedParameters {
+			paramIdProp := oscalTypes.Property{
+				Name:    fmt.Sprintf("%s_%d", extensions.ParameterIdProp, i),
+				Value:   parameter.Id,
+				Ns:      extensions.TrestleNameSpace,
+				Remarks: remark,
+			}
+
+			paramDescProp := oscalTypes.Property{
+				Name:    fmt.Sprintf("%s_%d", extensions.ParameterDescriptionProp, i),
+				Value:   strings.ReplaceAll(parameter.Description, "\n", "\\n"),
+				Ns:      extensions.TrestleNameSpace,
+				Remarks: remark,
+			}
+
+			if parameter.Default != nil {
+				parameterDefaultProp := oscalTypes.Property{
+					Name:    fmt.Sprintf("%s_%d", extensions.ParameterDefaultProp, i),
+					Value:   fmt.Sprintf("%v", parameter.Default),
+					Ns:      extensions.TrestleNameSpace,
+					Remarks: remark,
+				}
+				props = append(props, parameterDefaultProp)
+			}
+
+			props = append(props, paramDescProp, paramIdProp)
+		}
+	}
+
+	return props
 }
 
-func makeCheck(assessment layer4.Assessment, groupNumber int) []oscalTypes.Property {
+func makeCheck(ruleId string, method layer4.AssessmentMethod, groupNumber int) []oscalTypes.Property {
 	remark := fmt.Sprintf("rule_set_%d", groupNumber)
 	ruleIdProp := oscalTypes.Property{
 		Name:    extensions.RuleIdProp,
-		Value:   assessment.Requirement_Id,
+		Value:   ruleId,
 		Ns:      extensions.TrestleNameSpace,
 		Remarks: remark,
 	}
 
 	checkIdProp := oscalTypes.Property{
-		Name: extensions.CheckIdProp,
-		// FIXME: I actually need an ID here, but it doesn't exist right now
-		Value:   strings.ReplaceAll(assessment.Description, "\n", "\\n"),
+		Name:    extensions.CheckIdProp,
+		Value:   method.Name,
 		Ns:      extensions.TrestleNameSpace,
 		Remarks: remark,
 	}
 
 	checkDescProp := oscalTypes.Property{
 		Name:    extensions.CheckDescriptionProp,
-		Value:   assessment.Description,
+		Value:   method.Description,
 		Ns:      extensions.TrestleNameSpace,
 		Remarks: remark,
 	}
