@@ -154,8 +154,10 @@ func resourcesToBackMatter(resourceRefs []layer1.ResourceReference) *oscalTypes.
 }
 
 func guidelineToControl(guideline layer1.Guideline, resourcesMap map[string]string) (oscalTypes.Control, string) {
+	controlId := utils.NormalizeControl(guideline.Id)
+
 	control := oscalTypes.Control{
-		ID:    guideline.Id,
+		ID:    controlId,
 		Title: guideline.Title,
 	}
 
@@ -180,22 +182,15 @@ func guidelineToControl(guideline layer1.Guideline, resourcesMap map[string]stri
 		links = append(links, externalLink)
 	}
 
-	// objective part
-	objPart := oscalTypes.Part{
-		Name:  "assessment-objective",
-		ID:    fmt.Sprintf("%s_obj", guideline.Id),
-		Prose: guideline.Objective,
-	}
-
-	// top level smt
+	// Top-level statements are required for controls
 	smtPart := oscalTypes.Part{
 		Name: "statement",
-		ID:   fmt.Sprintf("%s_smt", guideline.Id),
+		ID:   fmt.Sprintf("%s_smt", controlId),
 	}
 	var subSmts []oscalTypes.Part
 	for _, part := range guideline.GuidelineParts {
 		subSmt := oscalTypes.Part{
-			ID:    fmt.Sprintf("%s_smt.%s", guideline.Id, part.Id),
+			ID:    fmt.Sprintf("%s_smt.%s", controlId, part.Id),
 			Prose: part.Prose,
 			Title: part.Title,
 		}
@@ -203,7 +198,7 @@ func guidelineToControl(guideline layer1.Guideline, resourcesMap map[string]stri
 		if len(part.Recommendations) > 0 {
 			gdnSubPart := oscalTypes.Part{
 				Name:  "guidance",
-				ID:    fmt.Sprintf("%s_smt.%s_gdn", guideline.Id, part.Id),
+				ID:    fmt.Sprintf("%s_smt.%s_gdn", controlId, part.Id),
 				Prose: strings.Join(part.Recommendations, " "),
 			}
 			subSmt.Parts = &[]oscalTypes.Part{
@@ -214,21 +209,27 @@ func guidelineToControl(guideline layer1.Guideline, resourcesMap map[string]stri
 		subSmts = append(subSmts, subSmt)
 	}
 	smtPart.Parts = utils.NilIfEmpty(&subSmts)
+	control.Parts = &[]oscalTypes.Part{smtPart}
 
-	control.Parts = &[]oscalTypes.Part{
-		objPart,
-		smtPart,
+	if guideline.Objective != "" {
+		// objective part
+		objPart := oscalTypes.Part{
+			Name:  "assessment-objective",
+			ID:    fmt.Sprintf("%s_obj", controlId),
+			Prose: guideline.Objective,
+		}
+		*control.Parts = append(*control.Parts, objPart)
 	}
 
 	if len(guideline.Recommendations) > 0 {
 		// gdn part
 		gdnPart := oscalTypes.Part{
 			Name:  "guidance",
-			ID:    fmt.Sprintf("%s_gdn", guideline.Id),
+			ID:    fmt.Sprintf("%s_gdn", controlId),
 			Prose: strings.Join(guideline.Recommendations, " "),
 		}
 		*control.Parts = append(*control.Parts, gdnPart)
 	}
 
-	return control, guideline.BaseGuidelineID
+	return control, utils.NormalizeControl(guideline.BaseGuidelineID)
 }

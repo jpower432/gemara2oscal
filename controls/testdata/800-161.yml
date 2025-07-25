@@ -43,6 +43,11 @@ categories:
         - "Contracts should explicitly address how audit findings will be reported and adjudicated."
       external-references:
         - nist-sp-800-161r1
+    - id: AU-6(9)
+      title: Correlation with Information from Non-Technical Sources
+      base-guideline-id: AU-6
+      recommendations:
+        - "Non-technical sources include changes to the enterprise’s security or operational policy, changes to the procurement or contracting processes, and notifications from suppliers, developers, system integrators, external system service providers, and other ICT/OT-related service providers regarding plans to update, enhance, patch, or retire/dispose of a system/component."
 - id: PL
   title: Planning
   description: "C-SCRM should influence security planning, including activities such as security architecture, coordination with other enterprise entities, and development of System Security Plans."
