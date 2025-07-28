@@ -1,0 +1,2 @@
+Layer 3 to Organization-Tailored Profiles with Guidance Tailoring
+Layer 3 to System Security Plans or Assessment Plan from Component Definition Building with Control Tailoring (Allow control and guidance exclusion)
