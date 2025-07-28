@@ -36,18 +36,20 @@ func ToAssessmentResults(ctx context.Context, planHref string, plan oscalTypes.A
 
 	// Get all the control mappings based on the assessment plan activities
 	rulesByControls := make(map[string][]string)
-	for _, act := range *plan.LocalDefinitions.Activities {
-		var controlSet []string
-		if act.RelatedControls != nil {
-			controls := act.RelatedControls.ControlSelections
-			for _, ctr := range controls {
-				for _, assess := range *ctr.IncludeControls {
-					targetId := fmt.Sprintf("%s_smt", assess.ControlId)
-					controlSet = append(controlSet, targetId)
+	if plan.LocalDefinitions != nil && plan.LocalDefinitions.Activities != nil {
+		for _, act := range *plan.LocalDefinitions.Activities {
+			var controlSet []string
+			if act.RelatedControls != nil {
+				controls := act.RelatedControls.ControlSelections
+				for _, ctr := range controls {
+					for _, assess := range *ctr.IncludeControls {
+						targetId := fmt.Sprintf("%s_smt", assess.ControlId)
+						controlSet = append(controlSet, targetId)
+					}
 				}
 			}
+			rulesByControls[act.Title] = controlSet
 		}
-		rulesByControls[act.Title] = controlSet
 	}
 
 	// Process into observations
@@ -177,75 +179,84 @@ func generateFindings(findings []oscalTypes.Finding, observation oscalTypes.Obse
 func observationsFromEvaluation(eval layer4.ControlEvaluation, subjectUUID map[string]string) ([]oscalTypes.Observation, error) {
 	var observations []oscalTypes.Observation
 	for _, assessment := range eval.Assessments {
-		// Metadata for raw evidence or assessment inputs would go here.
-		// There is not enough in the `gemara` schema to populate this properly.
-		// Should be fixed with https://github.com/revanite-io/sci/issues/23
-		subjectUuid, ok := subjectUUID[assessment.Requirement_Id]
-		if !ok {
-			subjectUuid = uuid.NewUUID()
-			subjectUUID[assessment.Requirement_Id] = subjectUuid
-		}
+		for _, method := range assessment.Methods {
 
-		subj := oscalTypes.SubjectReference{
-			SubjectUuid: subjectUuid,
-			Title:       assessment.Message,
-			Type:        Resource,
-		}
+			// If there is no result, the method was not run.
+			if method.Result == nil {
+				continue
+			}
+			// Metadata for raw evidence or assessment inputs would go here.
+			// There is not enough in the `gemara` schema to populate this properly.
+			// Should be fixed with https://github.com/revanite-io/sci/issues/23
+			subjectUuid, ok := subjectUUID[assessment.Requirement_Id]
+			if !ok {
+				subjectUuid = uuid.NewUUID()
+				subjectUUID[assessment.Requirement_Id] = subjectUuid
+			}
 
-		oscalObservation := oscalTypes.Observation{
-			UUID:        uuid.NewUUID(),
-			Title:       assessment.Requirement_Id,
-			Description: assessment.Description,
-			Methods:     []string{"TEST-AUTOMATED"},
-			// TODO: Think this conversion more since there is no L4 timestamp
-			Collected: time.Now(),
-			Subjects:  &[]oscalTypes.SubjectReference{subj},
-		}
+			var resultString string
+			switch *method.Result {
+			case layer4.Failed:
+				resultString = "failed"
+			case layer4.Passed:
+				resultString = "passed"
+			case layer4.NeedsReview:
+				resultString = "needs-review"
+			case layer4.NotApplicable:
+				resultString = "not-applicable"
+			case layer4.NotRun:
+				resultString = "not-run"
+			default:
+				resultString = "unknown"
+			}
 
-		var resultString string
-		switch assessment.Result {
-		case layer4.Failed:
-			resultString = "failed"
-		case layer4.Passed:
-			resultString = "passed"
-		case layer4.NeedsReview:
-			resultString = "needs-review"
-		case layer4.NotApplicable:
-			resultString = "not-applicable"
-		case layer4.NotRun:
-			resultString = "not-run"
-		default:
-			resultString = "unknown"
-		}
+			subj := oscalTypes.SubjectReference{
+				SubjectUuid: subjectUuid,
+				Title:       assessment.Message,
+				Type:        Resource,
+				Props: &[]oscalTypes.Property{
+					{
+						Name:  "result",
+						Value: resultString,
+						Ns:    extensions.TrestleNameSpace,
+					},
+					{
+						Name:  "reason",
+						Value: assessment.Message,
+						Ns:    extensions.TrestleNameSpace,
+					},
+					{
+						Name:  "steps-executed",
+						Value: strconv.Itoa(assessment.Steps_Executed),
+						Ns:    extensions.TrestleNameSpace,
+					},
+				},
+			}
 
-		oscalObservation.Props = &[]oscalTypes.Property{
-			{
-				Name:  extensions.AssessmentRuleIdProp,
-				Value: assessment.Requirement_Id,
-				Ns:    extensions.TrestleNameSpace,
-			},
-			{
-				Name:  extensions.AssessmentCheckIdProp,
-				Value: assessment.Requirement_Id,
-				Ns:    extensions.TrestleNameSpace,
-			},
-			{
-				Name:  "result",
-				Value: resultString,
-				Ns:    extensions.TrestleNameSpace,
-			},
-			{
-				Name:  "reason",
-				Value: assessment.Message,
-				Ns:    extensions.TrestleNameSpace,
-			},
-			{
-				Name:  "steps-executed",
-				Value: strconv.Itoa(assessment.Steps_Executed),
-				Ns:    extensions.TrestleNameSpace,
-			},
+			oscalObservation := oscalTypes.Observation{
+				UUID:        uuid.NewUUID(),
+				Title:       assessment.Requirement_Id,
+				Description: assessment.Description,
+				Methods:     []string{"TEST-AUTOMATED"},
+				// TODO: Think this conversion more since there is no L4 timestamp
+				Collected: time.Now(),
+				Subjects:  &[]oscalTypes.SubjectReference{subj},
+			}
+
+			oscalObservation.Props = &[]oscalTypes.Property{
+				{
+					Name:  extensions.AssessmentRuleIdProp,
+					Value: assessment.Requirement_Id,
+					Ns:    extensions.TrestleNameSpace,
+				},
+				{
+					Name:  extensions.AssessmentCheckIdProp,
+					Value: method.Name,
+					Ns:    extensions.TrestleNameSpace,
+				},
+			}
+			observations = append(observations, oscalObservation)
 		}
-		observations = append(observations, oscalObservation)
 	}
 	return observations, nil
 }

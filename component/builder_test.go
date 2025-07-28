@@ -9,6 +9,7 @@ import (
 	"github.com/oscal-compass/oscal-sdk-go/extensions"
 	"github.com/oscal-compass/oscal-sdk-go/validation"
 	"github.com/ossf/gemara/layer2"
+	"github.com/ossf/gemara/layer3"
 	"github.com/ossf/gemara/layer4"
 	"github.com/stretchr/testify/require"
 )
@@ -56,4 +57,14 @@ func TestDefinitionBuilder_Build(t *testing.T) {
 	validator := validation.NewSchemaValidator()
 	err = validator.Validate(oscalModels)
 	require.NoError(t, err)
+
+	componentDefinition = builder.AddParameterModifiers("OSPS-B", []layer3.ParameterModifier{{
+		TargetId: "main_branch_min_approvals",
+		ModType:  "tighten",
+		Value:    2,
+	}}).Build()
+	require.Len(t, *componentDefinition.Components, 2)
+	ci = *components[0].ControlImplementations
+	require.Len(t, ci, 1)
+	require.Equal(t, []oscalTypes.SetParameter{{ParamId: "main_branch_min_approvals", Values: []string{"2"}}}, *ci[0].SetParameters)
 }

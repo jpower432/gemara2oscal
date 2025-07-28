@@ -22,5 +22,5 @@ require (
 	github.com/stretchr/testify v1.10.0
 )
 
-// Points to experiments/oscal-transformation branch
+// Points to experiments/oscal-transformation branch (temporarily)
 replace github.com/ossf/gemara => github.com/jpower432/sci v0.0.0-20250724232228-cbb132d4c438

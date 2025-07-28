@@ -2,6 +2,7 @@ package component
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/defenseunicorns/go-oscal/src/pkg/uuid"
@@ -9,6 +10,7 @@ import (
 	"github.com/oscal-compass/oscal-sdk-go/extensions"
 	"github.com/oscal-compass/oscal-sdk-go/models"
 	"github.com/ossf/gemara/layer2"
+	"github.com/ossf/gemara/layer3"
 	"github.com/ossf/gemara/layer4"
 
 	"github.com/jpower432/gemara2oscal/internal/utils"
@@ -19,14 +21,15 @@ import (
 type DefinitionBuilder struct {
 	title               string
 	version             string
-	targetComponents    []oscalTypes.DefinedComponent
+	targetComponents    map[string]oscalTypes.DefinedComponent
 	validationComponent []oscalTypes.DefinedComponent
 }
 
 func NewDefinitionBuilder(title, version string) *DefinitionBuilder {
 	return &DefinitionBuilder{
-		title:   title,
-		version: version,
+		title:            title,
+		version:          version,
+		targetComponents: make(map[string]oscalTypes.DefinedComponent),
 	}
 }
 
@@ -73,7 +76,7 @@ func (c *DefinitionBuilder) AddTargetComponent(targetComponent, componentType st
 		Props:                  utils.NilIfEmpty(&componentProps),
 		ControlImplementations: utils.NilIfEmpty(&controlImplementations),
 	}
-	c.targetComponents = append(c.targetComponents, component)
+	c.targetComponents[catalog.Metadata.Id] = component
 	return c
 }
 
@@ -102,13 +105,46 @@ func (c *DefinitionBuilder) AddValidationComponent(source string, evaluations []
 	return c
 }
 
+// AddParameterModifiers takes parameter modifications for a given Layer 2 reference and creates OSCAL set-parameters
+// on the associated control set implementations. This will only take effect is the Layer 2 Catalogs has been added
+// through AddTargetComponent.
+func (c *DefinitionBuilder) AddParameterModifiers(referenceId string, modifiers []layer3.ParameterModifier) *DefinitionBuilder {
+	component, found := c.targetComponents[referenceId]
+	if found {
+		// Create set parameters
+		setParams := make([]oscalTypes.SetParameter, 0, len(modifiers))
+		for _, param := range modifiers {
+			setParameter := oscalTypes.SetParameter{
+				ParamId: param.TargetId,
+				Values:  []string{convertToString(param.Value)},
+			}
+			setParams = append(setParams, setParameter)
+		}
+
+		// Turn params modifiers into set parameters
+		if component.ControlImplementations != nil {
+			for i := range *component.ControlImplementations {
+				ci := &(*component.ControlImplementations)[i]
+				if ci.SetParameters == nil {
+					ci.SetParameters = &setParams
+				} else {
+					*ci.SetParameters = append(*ci.SetParameters, setParams...)
+				}
+			}
+		}
+	}
+	return c
+}
+
 func (c *DefinitionBuilder) Build() oscalTypes.ComponentDefinition {
 	metadata := models.NewSampleMetadata()
 	metadata.Title = c.title
 	metadata.Version = c.version
 
 	var allComponent []oscalTypes.DefinedComponent
-	allComponent = append(allComponent, c.targetComponents...)
+	for _, comp := range c.targetComponents {
+		allComponent = append(allComponent, comp)
+	}
 	allComponent = append(allComponent, c.validationComponent...)
 
 	return oscalTypes.ComponentDefinition{
@@ -159,7 +195,7 @@ func makeRule(requirement layer2.AssessmentRequirement, groupNumber int) []oscal
 			if parameter.Default != nil {
 				parameterDefaultProp := oscalTypes.Property{
 					Name:    fmt.Sprintf("%s_%d", extensions.ParameterDefaultProp, i),
-					Value:   fmt.Sprintf("%v", parameter.Default),
+					Value:   convertToString(parameter.Default),
 					Ns:      extensions.TrestleNameSpace,
 					Remarks: remark,
 				}
@@ -242,5 +278,21 @@ func createOrUpdateImplementedRequirement(ruleIdProp oscalTypes.Property, identi
 			Props:     &[]oscalTypes.Property{ruleIdProp},
 		}
 		controlImplementation.ImplementedRequirements = append(controlImplementation.ImplementedRequirements, implRequirement)
+	}
+}
+
+func convertToString(val any) string {
+	if val == nil {
+		return ""
+	}
+	switch v := val.(type) {
+	case string:
+		return v
+	case int:
+		return strconv.Itoa(v)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
+	default:
+		return fmt.Sprint(v)
 	}
 }
